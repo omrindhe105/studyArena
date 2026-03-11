@@ -27,11 +27,14 @@ export function FocusMode() {
   }, [focusModeActive]);
 
   const formatTime = (mins: number, secs: number) => {
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    const hours = Math.floor(mins / 60);
+    const minutes = mins % 60;
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
   const totalSeconds = isPomodoroMode ? (isBreak ? 5 * 60 : 25 * 60) : 0;
   const currentSeconds = timerMinutes * 60 + timerSeconds;
+  const currentHours = timerMinutes / 60;
   const progress =
     totalSeconds > 0
       ? ((totalSeconds - currentSeconds) / totalSeconds) * 100
@@ -39,20 +42,6 @@ export function FocusMode() {
 
   const [customHours, setCustomHours] = useState("");
   const [customMinutes, setCustomMinutes] = useState("");
-
-  const handleSetCustomTime = () => {
-    const hours = parseInt(customHours) || 0;
-    const minutes = parseInt(customMinutes) || 0;
-
-    const totalMinutes = hours * 60 + minutes;
-
-    if (totalMinutes > 0) {
-      setCustomTime(totalMinutes);
-    }
-
-    setCustomHours("");
-    setCustomMinutes("");
-  };
 
   if (!focusModeActive) return null;
 

@@ -1,20 +1,32 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useStudy } from "@/lib/study-context"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Target, Plus, Minus } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { useEffect, useState } from "react";
+import { useStudy } from "@/lib/study-context";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Target, Plus, Minus } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function GoalTracker() {
-  const { dailyGoalHours, todayHoursStudied, setDailyGoal, addStudyTime } = useStudy()
-  const [showAdjust, setShowAdjust] = useState(false)
+  const {
+    dailyGoalHours,
 
-  const progress = Math.min((todayHoursStudied / dailyGoalHours) * 100, 100)
-  const remaining = Math.max(dailyGoalHours - todayHoursStudied, 0)
-  const isComplete = progress >= 100
+    setDailyGoal,
+    addStudyTime,
+    todayHoursStudied,
+  } = useStudy();
+  const [showAdjust, setShowAdjust] = useState(false);
 
+  const progress = Math.min((todayHoursStudied / dailyGoalHours) * 100, 100);
+
+  const remaining = Math.max(dailyGoalHours - todayHoursStudied, 0);
+
+  const isComplete = progress >= 100;
+
+  useEffect(() => {
+    const hoursStudied = Math.floor(todayHoursStudied / 60);
+    const minStudied = Math.floor(todayHoursStudied % 60);
+  }, [todayHoursStudied]);
   return (
     <Card className="border-border bg-card">
       <CardHeader className="pb-3">
@@ -59,27 +71,33 @@ export function GoalTracker() {
                 strokeLinecap="round"
                 className={cn(
                   "transition-all duration-500",
-                  isComplete ? "text-green-500" : "text-primary"
+                  isComplete ? "text-green-500" : "text-primary",
                 )}
               />
             </svg>
             <div className="text-center">
-              <div className="text-xl font-bold text-foreground">{Math.round(progress)}%</div>
+              <div className="text-xl font-bold text-foreground">
+                {Math.round(progress)}%
+                {/* {timerMinutes}:{timerSeconds.toString().padStart(2, "0")} */}
+                {/* // connecting timer to goal tacker - showing time studied today */}
+              </div>
             </div>
           </div>
 
           <div className="flex-1 space-y-1">
             <div className="flex items-baseline justify-between">
               <span className="text-2xl font-bold text-foreground">
-                {todayHoursStudied.toFixed(1)}
+             {Math.floor(todayHoursStudied)}h {Math.round((todayHoursStudied % 1) * 60)}m
+               </span>
+              <span className="text-sm text-muted-foreground">
+                / {dailyGoalHours} hrs
               </span>
-              <span className="text-sm text-muted-foreground">/ {dailyGoalHours} hrs</span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-muted">
               <div
                 className={cn(
                   "h-full rounded-full transition-all duration-500",
-                  isComplete ? "bg-green-500" : "bg-primary"
+                  isComplete ? "bg-green-500" : "bg-primary",
                 )}
                 style={{ width: `${progress}%` }}
               />
@@ -148,5 +166,5 @@ export function GoalTracker() {
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
