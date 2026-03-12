@@ -87,8 +87,9 @@ export function GoalTracker() {
           <div className="flex-1 space-y-1">
             <div className="flex items-baseline justify-between">
               <span className="text-2xl font-bold text-foreground">
-             {Math.floor(todayHoursStudied)}h {Math.round((todayHoursStudied % 1) * 60)}m
-               </span>
+                {Math.floor(todayHoursStudied)}h{" "}
+                {Math.round((todayHoursStudied % 1) * 60)}m
+              </span>
               <span className="text-sm text-muted-foreground">
                 / {dailyGoalHours} hrs
               </span>

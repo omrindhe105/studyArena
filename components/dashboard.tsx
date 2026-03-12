@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Maximize2, Quote } from "lucide-react"
 import { useState, useEffect } from "react"
 
+
 interface DashboardProps {
   activeTab: string
 }
