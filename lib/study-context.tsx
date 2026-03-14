@@ -125,11 +125,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     todayHoursStudied: 0,
     tasks: defaultTasks,
     dailyNotes: "",
-    yesterdayPoints: [
-      "Completed binary search trees",
-      "Reviewed process scheduling",
-      "Started distributed consensus",
-    ],
+    yesterdayPoints: [],
     tomorrowPlan: "",
     revisionNotes: "",
     studyHistory: [

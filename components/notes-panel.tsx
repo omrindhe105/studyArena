@@ -1,10 +1,12 @@
-"use client"
+"use client";
 
-import { useStudy } from "@/lib/study-context"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Textarea } from "@/components/ui/textarea"
-import { FileText, History, Calendar, BookOpen } from "lucide-react"
+import { useStudy } from "@/lib/study-context";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { FileText, History, Calendar, BookOpen } from "lucide-react";
+import { set } from "mongoose";
+import { useEffect, useState } from "react";
 
 export function NotesPanel() {
   const {
@@ -15,7 +17,22 @@ export function NotesPanel() {
     setDailyNotes,
     setTomorrowPlan,
     setRevisionNotes,
-  } = useStudy()
+  } = useStudy();
+
+  const [notes, setNotes] = useState([]);
+
+  useEffect(() => {
+    async function fetchNotes() {
+      try {
+        const response = await fetch("/api/notes");
+        const data = await response.json();
+        setNotes(data);
+      } catch (error) {
+        console.log("Error fetching notes:", error);
+      }
+    }
+    fetchNotes();
+  }, []);
 
   return (
     <Card className="border-border bg-card">
@@ -64,6 +81,23 @@ export function NotesPanel() {
                 Key Points from Yesterday
               </div>
               <div className="space-y-2 rounded-lg bg-muted/30 p-3">
+                {notes.length > 0 ? (
+                  notes.map((note, index) => (
+                    <div
+                      key={index}
+                      className="flex items-start gap-2 text-sm text-foreground"
+                    >
+                      <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
+                      {note.notes}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No notes from yesterday
+                  </p>
+                )}
+              </div>
+              {/* <div className="space-y-2 rounded-lg bg-muted/30 p-3">
                 {yesterdayPoints.length > 0 ? (
                   yesterdayPoints.map((point, index) => (
                     <div
@@ -75,9 +109,11 @@ export function NotesPanel() {
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-muted-foreground">No notes from yesterday</p>
+                  <p className="text-sm text-muted-foreground">
+                    No notes from yesterday
+                  </p>
                 )}
-              </div>
+              </div> */}
             </div>
           </TabsContent>
 
@@ -113,5 +149,5 @@ export function NotesPanel() {
         </Tabs>
       </CardContent>
     </Card>
-  )
+  );
 }
