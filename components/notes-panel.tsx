@@ -5,8 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { FileText, History, Calendar, BookOpen } from "lucide-react";
-import { set } from "mongoose";
+import { toast } from "react-hot-toast";
+
 import { useEffect, useState } from "react";
+
+import { set } from "mongoose";
 
 export function NotesPanel() {
   const {
@@ -19,20 +22,87 @@ export function NotesPanel() {
     setRevisionNotes,
   } = useStudy();
 
-  const [notes, setNotes] = useState([]);
+  const [notes, setNotes] = useState<
+    {
+      _id: string;
+      notes: string;
+      Date: Date;
+    }[]
+  >([]);
+
+  const fetchNotes = async () => {
+    try {
+      const response = await fetch("/api/notes");
+      const data = await response.json();
+      setNotes(data);
+    } catch (error) {
+      console.log("Error fetching notes:", error);
+    }
+  };
 
   useEffect(() => {
-    async function fetchNotes() {
-      try {
-        const response = await fetch("/api/notes");
-        const data = await response.json();
-        setNotes(data);
-      } catch (error) {
-        console.log("Error fetching notes:", error);
-      }
-    }
     fetchNotes();
   }, []);
+
+  const handleSave = async () => {
+    if (!dailyNotes.trim()) {
+      alert("Please enter some notes");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/notes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ notes: dailyNotes }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save note");
+      }
+
+      const data = await res.json();
+      toast.success(data.message, {
+        duration: 3000,
+        position: "top-right",
+        className: "custom-snackbar",
+      });
+      fetchNotes();
+
+      setDailyNotes("");
+    } catch (error) {
+      console.error("Error saving note:", error);
+    }
+  };
+
+  const handleDelete = async (_id: string) => {
+    try {
+      const res = await fetch("api/notes", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: _id }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete note");
+      }
+
+      const data = await res.json();
+      toast.success(data.message, {
+        duration: 3000,
+        position: "top-right",
+        className: "custom-snackbar",
+      });
+
+      fetchNotes();
+    } catch (error) {
+      console.error("Error deleting note:", error);
+    }
+  };
 
   return (
     <Card className="border-border bg-card">
@@ -72,48 +142,49 @@ export function NotesPanel() {
                 className="min-h-[140px] resize-none bg-muted/30 text-sm"
               />
             </div>
+            <div className=" flex items-center justify-center   ">
+              <button
+                className=" mt-4 w-2/4 rounded-md bg-primary  py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary pointer-events-auto cursor-pointer "
+                onClick={handleSave}
+              >
+                save
+              </button>
+            </div>
           </TabsContent>
+          {/* {apiResponce !== null && toast.success(apiResponce)} */}
 
           <TabsContent value="yesterday" className="mt-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <History className="h-3 w-3" />
-                Key Points from Yesterday
+                Key Points from last day
               </div>
-              <div className="space-y-2 rounded-lg bg-muted/30 p-3">
+              <div className="space-y-4 rounded-lg bg-muted/30 p-3 relative my-2">
                 {notes.length > 0 ? (
-                  notes.map((note, index) => (
+                  notes.map((note) => (
                     <div
-                      key={index}
-                      className="flex items-start gap-2 text-sm text-foreground"
+                      key={note._id}
+                      className="flex justify-between items-start text-md text-foreground"
                     >
-                      <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-                      {note.notes}
+                      <div className="flex gap-3">
+                        <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary" />
+                        {note.notes}
+                      </div>
+
+                      <button
+                        className="cursor-pointer rounded-full bg-muted p-1 hover:bg-red-500"
+                        onClick={() => handleDelete(note._id)}
+                      >
+                        X
+                      </button>
                     </div>
                   ))
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    No notes from yesterday
+                    No notes from previous days
                   </p>
                 )}
               </div>
-              {/* <div className="space-y-2 rounded-lg bg-muted/30 p-3">
-                {yesterdayPoints.length > 0 ? (
-                  yesterdayPoints.map((point, index) => (
-                    <div
-                      key={index}
-                      className="flex items-start gap-2 text-sm text-foreground"
-                    >
-                      <span className="mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-                      {point}
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No notes from yesterday
-                  </p>
-                )}
-              </div> */}
             </div>
           </TabsContent>
 

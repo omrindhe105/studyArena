@@ -223,6 +223,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
           : 25
         : prev.customMinutes,
       timerSeconds: 0,
+      todayHoursStudied: 0,
     }));
   }, []);
 

@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 export function GoalTracker() {
   const {
     dailyGoalHours,
-
+    
     setDailyGoal,
     addStudyTime,
     todayHoursStudied,
