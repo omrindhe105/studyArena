@@ -5,7 +5,7 @@ import { Play, Pause, RotateCcw, Clock, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function StudyTimer() {
   const {
@@ -40,6 +40,22 @@ export function StudyTimer() {
   const presetTimes = [60, 120, 180];
   const [customHours, setCustomHours] = useState("");
   const [customMinutes, setCustomMinutes] = useState("");
+  const [state, setState] = useState({
+    timerMinutes: 0,
+    timerSeconds: 0,
+  });
+
+  useEffect(() => {
+    localStorage.setItem(
+      "studyTimer",
+      JSON.stringify({ timerMinutes, timerSeconds }),
+    );
+  }, [timerMinutes, timerSeconds]);
+
+  const handleLocalStorage = () => {
+    const studyTimer = localStorage.getItem("studyTimer");
+    console.log(studyTimer);
+  };
 
   const handleSetCustomTime = () => {
     const hours = parseInt(customHours) || 0;
@@ -78,34 +94,6 @@ export function StudyTimer() {
         {/* Timer Display */}
         <div className="relative flex items-center justify-center">
           <div className="relative flex h-40 w-40 items-center justify-center">
-            {/* Progress Ring */}
-            {/* <svg className="absolute h-full w-full -rotate-90">
-              <circle
-                cx="80"
-                cy="80"
-                r="70"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="4"
-                className="text-muted"
-              />
-              <circle
-                cx="80"
-                cy="80"
-                r="70"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="4"
-                strokeDasharray={2 * Math.PI * 70}
-                strokeDashoffset={2 * Math.PI * 70 * (1 - progress / 100)}
-                strokeLinecap="round"
-                className={cn(
-                  "transition-all duration-1000",
-                  isBreak ? "text-orange-500" : "text-primary",
-                )}
-              />
-            </svg> */}
-            {/* Time Display */}
             <div className="text-center">
               <div className="font-mono text-4xl font-bold tracking-tight text-card-foreground">
                 {formatTime(timerMinutes, timerSeconds)}
@@ -155,6 +143,11 @@ export function StudyTimer() {
           >
             Pomodoro
           </Button>
+          <div>
+            <button onClick={handleLocalStorage} className="pointer-cursor">
+              get Token
+            </button>
+          </div>
         </div>
 
         {/* Preset Times */}
