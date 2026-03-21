@@ -11,7 +11,6 @@ export function StudyTimer() {
   const {
     timerMinutes,
     timerSeconds,
-
     isRunning,
     isPomodoroMode,
     isBreak,
@@ -20,6 +19,7 @@ export function StudyTimer() {
     resetTimer,
     setCustomTime,
     togglePomodoroMode,
+    isLoading,
   } = useStudy();
 
   const formatTime = (mins: number, secs: number) => {
@@ -31,45 +31,27 @@ export function StudyTimer() {
       .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const progress = isPomodoroMode
-    ? isBreak
-      ? ((5 * 60 - (timerMinutes * 60 + timerSeconds)) / (5 * 60)) * 100
-      : ((25 * 60 - (timerMinutes * 60 + timerSeconds)) / (25 * 60)) * 100
-    : 0;
-
   const presetTimes = [60, 120, 180];
   const [customHours, setCustomHours] = useState("");
   const [customMinutes, setCustomMinutes] = useState("");
-  const [state, setState] = useState({
-    timerMinutes: 0,
-    timerSeconds: 0,
-  });
 
-  useEffect(() => {
-    localStorage.setItem(
-      "studyTimer",
-      JSON.stringify({ timerMinutes, timerSeconds }),
-    );
-  }, [timerMinutes, timerSeconds]);
 
-  const handleLocalStorage = () => {
-    const studyTimer = localStorage.getItem("studyTimer");
-    console.log(studyTimer);
-  };
+
+
 
   const handleSetCustomTime = () => {
     const hours = parseInt(customHours) || 0;
     const minutes = parseInt(customMinutes) || 0;
-
     const totalMinutes = hours * 60 + minutes;
-
     if (totalMinutes > 0) {
       setCustomTime(totalMinutes);
     }
-
     setCustomHours("");
     setCustomMinutes("");
   };
+
+
+
 
   return (
     <Card className="border-border bg-card">
@@ -91,13 +73,18 @@ export function StudyTimer() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Timer Display */}
         <div className="relative flex items-center justify-center">
           <div className="relative flex h-40 w-40 items-center justify-center">
             <div className="text-center">
-              <div className="font-mono text-4xl font-bold tracking-tight text-card-foreground">
-                {formatTime(timerMinutes, timerSeconds)}
-              </div>
+              {isLoading ? (
+                <div className="font-mono text-4xl font-bold tracking-tight text-card-foreground">
+                  Loading...
+                </div>
+              ) : (
+                <div className="font-mono text-4xl font-bold tracking-tight text-card-foreground">
+                  {formatTime(timerMinutes, timerSeconds)}
+                </div>
+              )}
               <div className="mt-1 text-xs text-muted-foreground">
                 {isPomodoroMode
                   ? isBreak
@@ -109,7 +96,6 @@ export function StudyTimer() {
           </div>
         </div>
 
-        {/* Controls */}
         <div className="flex items-center justify-center gap-2">
           <Button
             size="icon"
@@ -143,17 +129,10 @@ export function StudyTimer() {
           >
             Pomodoro
           </Button>
-          <div>
-            <button onClick={handleLocalStorage} className="pointer-cursor">
-              get Token
-            </button>
-          </div>
         </div>
 
-        {/* Preset Times */}
         {!isPomodoroMode && (
           <div className="flex flex-col items-center gap-3">
-            {/* Preset Buttons */}
             <div className="flex justify-center gap-2">
               {presetTimes.map((time) => (
                 <Button
@@ -168,7 +147,6 @@ export function StudyTimer() {
               ))}
             </div>
 
-            {/* Custom Time Input */}
             <div className="flex items-center gap-2">
               <input
                 type="text"

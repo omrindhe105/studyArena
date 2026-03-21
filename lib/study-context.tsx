@@ -22,37 +22,36 @@ export interface DayRecord {
 }
 
 export interface StudyState {
-  // Timer
+
   timerMinutes: number;
   timerSeconds: number;
-  // timerHours: number
+
   isRunning: boolean;
   isPomodoroMode: boolean;
   isBreak: boolean;
   customMinutes: number;
 
-  // Goals
+
   dailyGoalHours: number;
   todayHoursStudied: number;
 
-  // Tasks
+
   tasks: Task[];
 
-  // Notes
+
   dailyNotes: string;
   yesterdayPoints: string[];
   tomorrowPlan: string;
   revisionNotes: string;
 
-  // History
   studyHistory: DayRecord[];
   streak: number;
 
-  // Focus Mode
   focusModeActive: boolean;
 
-  // Theme
+
   isDarkMode: boolean;
+  isLoading: boolean;
 }
 
 interface StudyContextType extends StudyState {
@@ -121,7 +120,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     isPomodoroMode: true,
     isBreak: false,
     customMinutes: 25,
-    dailyGoalHours: 6,
+    dailyGoalHours: 8,
     todayHoursStudied: 0,
     tasks: defaultTasks,
     dailyNotes: "",
@@ -164,9 +163,43 @@ export function StudyProvider({ children }: { children: ReactNode }) {
     streak: 7,
     focusModeActive: false,
     isDarkMode: true,
+    isLoading: true,
   });
 
-  // Timer effect
+
+
+
+
+
+  useEffect(() => {
+    const saved = localStorage.getItem("study_flow_state");
+
+
+    if (saved) {
+
+      try {
+        const parsed = JSON.parse(saved);
+        setState((prev) => ({
+          ...prev,
+          ...parsed,
+
+        }));
+        setState((prev) => ({ ...prev, isLoading: false }));
+
+      } catch (e) {
+        console.error("Failed to load state", e);
+      }
+    }
+    setState((prev) => ({ ...prev, isLoading: false }));
+  }, []);
+
+
+  useEffect(() => {
+    const { isRunning, focusModeActive, ...persistentState } = state;
+    localStorage.setItem("study_flow_state", JSON.stringify(persistentState));
+  }, [state]);
+
+
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
 
@@ -183,7 +216,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
               todayHoursStudied: ((s) => s + 1 / 60)(prev.todayHoursStudied), // Increment study time by 1 minute
             };
           } else {
-            // Timer completed
+
             if (prev.isPomodoroMode) {
               const newIsBreak = !prev.isBreak;
               return {
@@ -232,7 +265,7 @@ export function StudyProvider({ children }: { children: ReactNode }) {
       ...prev,
       customMinutes: minutes,
       timerMinutes: minutes,
-      timerSeconds: 0,
+
       isPomodoroMode: false,
       isRunning: false,
     }));
