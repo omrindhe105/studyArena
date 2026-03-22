@@ -1,6 +1,7 @@
 "use client";
 
 import { useStudy } from "@/lib/study-context";
+
 import {
   LayoutDashboard,
   FileText,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 
 interface SidebarProps {
   activeTab: string;
@@ -28,18 +30,45 @@ const navItems = [
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "settings", label: "Settings", icon: Settings },
 ];
+interface streakData {
+  currentStreak: number;
+  longestStreak: number;
+  studiedToday: boolean;
+  atRisk: boolean;
+}
 
 export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const { studyHistory, streak, isDarkMode, toggleTheme } = useStudy();
+  const [apiData, setApiData] = useState<streakData>({
+    currentStreak: 0,
+    longestStreak: 0,
+    studiedToday: true,
+    atRisk: false,
+  });
 
   const weeklyHours = studyHistory
     .slice(0, 7)
     .reduce((sum, day) => sum + day.hoursStudied, 0);
   const avgDaily = weeklyHours / 7;
 
+  const fetchStreak = async () => {
+    const res = await fetch("/api/analytics/streaks");
+    const data = await res.json();
+    setApiData({
+      currentStreak: data.currentStreak,
+      longestStreak: data.longestStreak,
+      studiedToday: data.studiedToday,
+      atRisk: data.atRisk,
+    });
+    console.log(data);
+  };
+
+  useEffect(() => {
+    fetchStreak();
+  }, []);
+
   return (
     <aside className="flex h-full w-64 flex-col border-r border-border bg-sidebar">
-      {/* Logo */}
       <div className="flex items-center gap-2 border-b border-border px-4 py-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
           <TrendingUp className="h-4 w-4 text-primary-foreground" />
@@ -49,7 +78,6 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         </span>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 space-y-1 p-3">
         {navItems.map((item) => (
           <button
@@ -77,7 +105,7 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
             Study Streak
           </div>
           <div className="text-2xl font-bold text-sidebar-foreground">
-            {streak}{" "}
+            {apiData ? apiData.currentStreak : 0}{" "}
             <span className="text-sm font-normal text-sidebar-foreground/60">
               days
             </span>

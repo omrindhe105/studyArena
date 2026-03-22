@@ -6,13 +6,13 @@ export async function GET() {
   await connectDb();
   try {
     const sessions = await studySession
-      .find({}, { createdAt: 1 }) 
-      .sort({ createdAt: -1 }); 
+      .find({}, { createdAt: 1, durationMinutes: 1 })
+      .sort({ createdAt: -1 });
 
     const uniqueDates = [
       ...new Set(
         sessions.map((s) => {
-          const d = new Date(s.createdAt); 
+          const d = new Date(s.createdAt);
           d.setHours(0, 0, 0, 0);
           return d.getTime();
         }),
@@ -31,7 +31,6 @@ export async function GET() {
     const mostRecent = uniqueDates[0];
     const studiedToday = mostRecent === today.getTime();
 
-    // Streak is dead if last study was 2+ days ago
     if (mostRecent !== today.getTime() && mostRecent !== yesterday.getTime()) {
       return NextResponse.json({
         currentStreak: 0,
@@ -41,7 +40,6 @@ export async function GET() {
       });
     }
 
-    // Count consecutive days
     let currentStreak = 1;
     for (let i = 1; i < uniqueDates.length; i++) {
       const diff = uniqueDates[i - 1] - uniqueDates[i];
@@ -52,11 +50,21 @@ export async function GET() {
       }
     }
 
+    const last7Days = sessions.reduce((s) => {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const last7Days = sessions.filter(
+        (s) => new Date(s.date) >= sevenDaysAgo,
+      );
+      console.log(last7Days);
+    });
+
     return NextResponse.json({
+      last7Days,
       currentStreak,
       longestStreak: getLongest(uniqueDates),
       studiedToday,
-      atRisk: !studiedToday,
     });
   } catch (error) {
     console.log(error);

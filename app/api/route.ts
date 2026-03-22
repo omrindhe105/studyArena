@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     sessionType,
     createdAt: date,
   });
- 
+
   await studySession.save();
   return new Response("Study session recorded", { status: 201 });
 }
