@@ -19,3 +19,5 @@ export async function POST(req: Request) {
   await studySession.save();
   return new Response("Study session recorded", { status: 201 });
 }
+
+

@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
+import { set } from "mongoose";
 
 interface SidebarProps {
   activeTab: string;
@@ -33,8 +34,15 @@ const navItems = [
 interface streakData {
   currentStreak: number;
   longestStreak: number;
-  studiedToday: boolean;
-  atRisk: boolean;
+  totalDurationMinutes: number;
+  averageStudy: {
+    sevenDaysHours: number;
+    sevenDaysAvg: number;
+  };
+  last4Days: {
+    date: string;
+    hoursStudied: number;
+  }[];
 }
 
 export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
@@ -42,24 +50,23 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const [apiData, setApiData] = useState<streakData>({
     currentStreak: 0,
     longestStreak: 0,
-    studiedToday: true,
-    atRisk: false,
+    totalDurationMinutes: 0,
+    averageStudy: {
+      sevenDaysHours: 0,
+      sevenDaysAvg: 0,
+    },
+    last4Days: [
+      {
+        date: "",
+        hoursStudied: 0,
+      },
+    ],
   });
-
-  const weeklyHours = studyHistory
-    .slice(0, 7)
-    .reduce((sum, day) => sum + day.hoursStudied, 0);
-  const avgDaily = weeklyHours / 7;
 
   const fetchStreak = async () => {
     const res = await fetch("/api/analytics/streaks");
-    const data = await res.json();
-    setApiData({
-      currentStreak: data.currentStreak,
-      longestStreak: data.longestStreak,
-      studiedToday: data.studiedToday,
-      atRisk: data.atRisk,
-    });
+    const data: streakData = await res.json();
+    setApiData(data);
     console.log(data);
   };
 
@@ -119,13 +126,13 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
             This Week
           </div>
           <div className="text-2xl font-bold text-sidebar-foreground">
-            {weeklyHours.toFixed(1)}{" "}
+            {apiData ? apiData.averageStudy.sevenDaysHours : 0}{" "}
             <span className="text-sm font-normal text-sidebar-foreground/60">
               hrs
             </span>
           </div>
           <div className="mt-1 text-xs text-sidebar-foreground/60">
-            Avg: {avgDaily.toFixed(1)} hrs/day
+            Avg: {apiData ? apiData.averageStudy.sevenDaysAvg : 0} hrs/day
           </div>
         </div>
 
@@ -134,23 +141,25 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           <div className="text-xs font-medium text-sidebar-foreground/70">
             Recent Sessions
           </div>
-          {studyHistory.slice(0, 3).map((day, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between rounded-lg px-2 py-1.5 text-xs hover:bg-sidebar-accent/30"
-            >
-              <span className="text-sidebar-foreground/70">
-                {new Date(day.date).toLocaleDateString("en-US", {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                })}
-              </span>
-              <span className="font-medium text-sidebar-foreground">
-                {day.hoursStudied}h
-              </span>
-            </div>
-          ))}
+          {apiData
+            ? apiData.last4Days.map((day, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between rounded-lg px-2 py-1.5 text-xs hover:bg-sidebar-accent/30"
+                >
+                  <span className="text-sidebar-foreground/70">
+                    {new Date(day.date).toLocaleDateString("en-us", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                  <span className="font-medium text-sidebar-foreground">
+                    {day.hoursStudied}h
+                  </span>
+                </div>
+              ))
+            : "no data"}
         </div>
       </div>
 

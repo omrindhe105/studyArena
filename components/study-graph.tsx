@@ -1,12 +1,13 @@
-"use client"
+"use client";
 
-import { useStudy } from "@/lib/study-context"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+// import { useStudy } from "@/lib/study-context"
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart"
+} from "@/components/ui/chart";
 import {
   AreaChart,
   Area,
@@ -16,28 +17,39 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-} from "recharts"
-import { BarChart3, TrendingUp, Clock, Award } from "lucide-react"
+} from "recharts";
+import { BarChart3, TrendingUp, Clock, Award } from "lucide-react";
+
+interface streakData {
+  totalDurationMinutes: number;
+  averageStudy: {
+    sevenDaysHours: number;
+    sevenDaysAvg: number;
+  };
+}
 
 export function StudyGraph() {
-  const { studyHistory, todayHoursStudied } = useStudy()
+  const [apiData, setApiData] = useState<streakData>({
+    totalDurationMinutes: 0,
+    averageStudy: {
+      sevenDaysHours: 0,
+      sevenDaysAvg: 0,
+    },    
+  });
 
-  // Prepare weekly data (reversed to show oldest first)
-  const weeklyData = [...studyHistory].reverse().map((day) => ({
-    day: new Date(day.date).toLocaleDateString("en-US", { weekday: "short" }),
-    hours: day.hoursStudied,
-  }))
+  const handleApiData = async () => {
+    const res = await fetch("/api/analytics/streaks");
+    if (!res.ok) {
+      throw new Error("Failed to fetch data");
+    }
+    const data: streakData = await res.json();
+    // console.log(data);
+    setApiData(data);
+  };
 
-  // Add today
-  weeklyData.push({
-    day: "Today",
-    hours: todayHoursStudied,
-  })
-
-  // Stats
-  const totalHours = studyHistory.reduce((sum, d) => sum + d.hoursStudied, 0) + todayHoursStudied
-  const avgHours = totalHours / (studyHistory.length + 1)
-  const bestDay = Math.max(...studyHistory.map((d) => d.hoursStudied), todayHoursStudied)
+  useEffect(() => {
+    handleApiData();
+  }, []);
 
   return (
     <Card className="border-border bg-card">
@@ -56,7 +68,7 @@ export function StudyGraph() {
               Total
             </div>
             <div className="mt-1 text-lg font-bold text-foreground">
-              {totalHours.toFixed(1)}h
+              {apiData ? (apiData.totalDurationMinutes / 60).toFixed(1) : 0}h
             </div>
           </div>
           <div className="rounded-lg bg-muted/50 p-3">
@@ -65,7 +77,7 @@ export function StudyGraph() {
               Average
             </div>
             <div className="mt-1 text-lg font-bold text-foreground">
-              {avgHours.toFixed(1)}h
+              {apiData ? apiData.averageStudy.sevenDaysAvg : 0}h
             </div>
           </div>
           <div className="rounded-lg bg-muted/50 p-3">
@@ -74,14 +86,16 @@ export function StudyGraph() {
               Best Day
             </div>
             <div className="mt-1 text-lg font-bold text-foreground">
-              {bestDay.toFixed(1)}h
+              {/* {bestDay.toFixed(1)}h */}
             </div>
           </div>
         </div>
 
         {/* Weekly Chart */}
         <div>
-          <div className="mb-2 text-xs font-medium text-muted-foreground">Weekly Overview</div>
+          <div className="mb-2 text-xs font-medium text-muted-foreground">
+            Weekly Overview
+          </div>
           <ChartContainer
             config={{
               hours: {
@@ -92,14 +106,29 @@ export function StudyGraph() {
             className="h-[160px]"
           >
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={weeklyData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+              <AreaChart
+                // data={weeklyData}
+                margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
+              >
                 <defs>
                   <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-hours)" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="var(--color-hours)" stopOpacity={0} />
+                    <stop
+                      offset="5%"
+                      stopColor="var(--color-hours)"
+                      stopOpacity={0.3}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="var(--color-hours)"
+                      stopOpacity={0}
+                    />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" vertical={false} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  className="stroke-muted"
+                  vertical={false}
+                />
                 <XAxis
                   dataKey="day"
                   tick={{ fontSize: 10 }}
@@ -129,7 +158,9 @@ export function StudyGraph() {
 
         {/* Bar Chart */}
         <div>
-          <div className="mb-2 text-xs font-medium text-muted-foreground">Daily Comparison</div>
+          <div className="mb-2 text-xs font-medium text-muted-foreground">
+            Daily Comparison
+          </div>
           <ChartContainer
             config={{
               hours: {
@@ -140,7 +171,10 @@ export function StudyGraph() {
             className="h-[100px]"
           >
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weeklyData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+              <BarChart
+                // data={weeklyData}
+                margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
+              >
                 <XAxis
                   dataKey="day"
                   tick={{ fontSize: 10 }}
@@ -161,5 +195,5 @@ export function StudyGraph() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
