@@ -1,7 +1,6 @@
 "use client";
 
 import { useStudy } from "@/lib/study-context";
-
 import {
   LayoutDashboard,
   FileText,
@@ -17,7 +16,6 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
-import { set } from "mongoose";
 
 interface SidebarProps {
   activeTab: string;
@@ -31,59 +29,68 @@ const navItems = [
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "settings", label: "Settings", icon: Settings },
 ];
-interface streakData {
+
+interface StreakData {
   currentStreak: number;
   longestStreak: number;
   totalDurationMinutes: number;
-  averageStudy: {
-    sevenDaysHours: number;
-    sevenDaysAvg: number;
-  };
-  last4Days: {
-    date: string;
-    hoursStudied: number;
-  }[];
+  averageStudy: { sevenDaysHours: number; sevenDaysAvg: number };
+  last4Days: { date: string; hoursStudied: number }[];
 }
 
+const defaultData: StreakData = {
+  currentStreak: 0,
+  longestStreak: 0,
+  totalDurationMinutes: 0,
+  averageStudy: { sevenDaysHours: 0, sevenDaysAvg: 0 },
+  last4Days: [],
+};
+
 export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
-  const { studyHistory, streak, isDarkMode, toggleTheme } = useStudy();
-  const [apiData, setApiData] = useState<streakData>({
-    currentStreak: 0,
-    longestStreak: 0,
-    totalDurationMinutes: 0,
-    averageStudy: {
-      sevenDaysHours: 0,
-      sevenDaysAvg: 0,
-    },
-    last4Days: [
-      {
-        date: "",
-        hoursStudied: 0,
-      },
-    ],
-  });
+  // ✅ Only destructure what's actually used
+  const { studyHistory, isDarkMode, toggleTheme } = useStudy();
+
+  const [apiData, setApiData] = useState<StreakData>(defaultData);
+  const [isLoading, setIsLoading] = useState(true); // ✅ Loading state
+  const [error, setError] = useState<string | null>(null); // ✅ Error state
 
   const fetchStreak = async () => {
-    const res = await fetch("/api/analytics/streaks");
-    const data: streakData = await res.json();
-    setApiData(data);
-    console.log(data);
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/analytics/streaks");
+      if (!res.ok) throw new Error(`Request failed: ${res.status}`); // ✅ res.ok check
+      const data: StreakData = await res.json();
+      setApiData(data);
+    } catch (err) {
+      setError("Could not load streak data."); // ✅ User-facing error
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  // ✅ Re-fetch when a new study session is logged
   useEffect(() => {
     fetchStreak();
-  }, []);
+  }, [studyHistory]);
+
+  // ✅ Skeleton while loading
+  if (isLoading) {
+    return (
+      <aside className="flex h-full w-64 flex-col border-r border-border bg-sidebar">
+        <SidebarHeader />
+        <div className="flex-1 p-4 space-y-3 animate-pulse">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-10 rounded-lg bg-sidebar-accent/40" />
+          ))}
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-border bg-sidebar">
-      <div className="flex items-center gap-2 border-b border-border px-4 py-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-          <TrendingUp className="h-4 w-4 text-primary-foreground" />
-        </div>
-        <span className="text-lg font-semibold text-sidebar-foreground">
-          StudyArena
-        </span>
-      </div>
+      <SidebarHeader />
 
       <nav className="flex-1 space-y-1 p-3">
         {navItems.map((item) => (
@@ -103,67 +110,81 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         ))}
       </nav>
 
-      {/* Stats Section */}
       <div className="space-y-3 border-t border-border p-4">
-        {/* Streak */}
-        <div className="rounded-lg bg-sidebar-accent/50 p-3">
-          <div className="mb-1 flex items-center gap-2 text-xs font-medium text-sidebar-foreground/70">
-            <Flame className="h-3.5 w-3.5 text-orange-500" />
-            Study Streak
-          </div>
-          <div className="text-2xl font-bold text-sidebar-foreground">
-            {apiData ? apiData.currentStreak : 0}{" "}
-            <span className="text-sm font-normal text-sidebar-foreground/60">
-              days
-            </span>
-          </div>
-        </div>
+        {error ? (
+          <p className="text-xs text-destructive">{error}</p>
+        ) : (
+          <>
+            {/* Streak */}
+            <div className="rounded-lg bg-sidebar-accent/50 p-3">
+              <div className="mb-1 flex items-center gap-2 text-xs font-medium text-sidebar-foreground/70">
+                <Flame className="h-3.5 w-3.5 text-orange-500" />
+                Study Streak
+              </div>
+              <div className="text-2xl font-bold text-sidebar-foreground">
+                {apiData.currentStreak}{" "}
+                <span className="text-sm font-normal text-sidebar-foreground/60">
+                  days
+                </span>
+              </div>
+            </div>
 
-        {/* Weekly Stats */}
-        <div className="rounded-lg bg-sidebar-accent/50 p-3">
-          <div className="mb-1 flex items-center gap-2 text-xs font-medium text-sidebar-foreground/70">
-            <Calendar className="h-3.5 w-3.5 text-primary" />
-            This Week
-          </div>
-          <div className="text-2xl font-bold text-sidebar-foreground">
-            {apiData ? apiData.averageStudy.sevenDaysHours : 0}{" "}
-            <span className="text-sm font-normal text-sidebar-foreground/60">
-              hrs
-            </span>
-          </div>
-          <div className="mt-1 text-xs text-sidebar-foreground/60">
-            Avg: {apiData ? apiData.averageStudy.sevenDaysAvg : 0} hrs/day
-          </div>
-        </div>
+            {/* Weekly stats */}
+            <div className="rounded-lg bg-sidebar-accent/50 p-3">
+              <div className="mb-1 flex items-center gap-2 text-xs font-medium text-sidebar-foreground/70">
+                <Calendar className="h-3.5 w-3.5 text-primary" />
+                This Week
+              </div>
+              <div className="text-2xl font-bold text-sidebar-foreground">
+                {apiData.averageStudy.sevenDaysHours}{" "}
+                <span className="text-sm font-normal text-sidebar-foreground/60">
+                  hrs
+                </span>
+              </div>
+              <div className="mt-1 text-xs text-sidebar-foreground/60">
+                Avg: {apiData.averageStudy.sevenDaysAvg} hrs/day
+              </div>
+            </div>
 
-        {/* Recent History */}
-        <div className="space-y-2">
-          <div className="text-xs font-medium text-sidebar-foreground/70">
-            Recent Sessions
-          </div>
-          {apiData
-            ? apiData.last4Days.map((day, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between rounded-lg px-2 py-1.5 text-xs hover:bg-sidebar-accent/30"
-                >
-                  <span className="text-sidebar-foreground/70">
-                    {new Date(day.date).toLocaleDateString("en-us", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </span>
-                  <span className="font-medium text-sidebar-foreground">
-                    {day.hoursStudied}h
-                  </span>
-                </div>
-              ))
-            : "no data"}
-        </div>
+            {/* Recent sessions */}
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-sidebar-foreground/70">
+                Recent Sessions
+              </div>
+
+              {/* ✅ Guard on array length, not on the object itself */}
+              {apiData.last4Days.length === 0 ? (
+                <p className="text-xs text-sidebar-foreground/50">
+                  No sessions yet.
+                </p>
+              ) : (
+                apiData.last4Days.map((day, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between rounded-lg px-2 py-1.5 text-xs hover:bg-sidebar-accent/30"
+                  >
+                    <span className="text-sidebar-foreground/70">
+                      {/* ✅ Guard against empty date string */}
+                      {day.date
+                        ? new Date(day.date).toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                          })
+                        : "—"}
+                    </span>
+                    <span className="font-medium text-sidebar-foreground">
+                      {day.hoursStudied}h
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Theme Toggle */}
+      {/* Theme toggle */}
       <div className="border-t border-border p-3">
         <Button
           variant="ghost"
@@ -180,5 +201,19 @@ export function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         </Button>
       </div>
     </aside>
+  );
+}
+
+// Small helper to avoid duplicating the header in the skeleton
+function SidebarHeader() {
+  return (
+    <div className="flex items-center gap-2 border-b border-border px-4 py-4">
+      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+        <TrendingUp className="h-4 w-4 text-primary-foreground" />
+      </div>
+      <span className="text-lg font-semibold text-sidebar-foreground">
+        StudyArena
+      </span>
+    </div>
   );
 }

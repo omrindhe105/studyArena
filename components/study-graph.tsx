@@ -1,6 +1,6 @@
 "use client";
 
-// import { useStudy } from "@/lib/study-context"
+import { useStudy } from "@/lib/study-context";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -17,6 +17,7 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
+  ComposedChart,
 } from "recharts";
 import { BarChart3, TrendingUp, Clock, Award } from "lucide-react";
 
@@ -26,6 +27,10 @@ interface streakData {
     sevenDaysHours: number;
     sevenDaysAvg: number;
   };
+  last4Days: {
+    date: string;
+    hoursStudied: number;
+  }[];
 }
 
 export function StudyGraph() {
@@ -34,8 +39,17 @@ export function StudyGraph() {
     averageStudy: {
       sevenDaysHours: 0,
       sevenDaysAvg: 0,
-    },    
+    },
+    last4Days: [],
   });
+
+  const formattedData =
+    apiData.last4Days?.map((item) => ({
+      day: new Date(item.date).toLocaleDateString("en-US", {
+        weekday: "short",
+      }),
+      hours: item.hoursStudied,
+    })) ?? [];
 
   const handleApiData = async () => {
     const res = await fetch("/api/analytics/streaks");
@@ -92,7 +106,7 @@ export function StudyGraph() {
         </div>
 
         {/* Weekly Chart */}
-        <div>
+        {/* <div>
           <div className="mb-2 text-xs font-medium text-muted-foreground">
             Weekly Overview
           </div>
@@ -100,14 +114,14 @@ export function StudyGraph() {
             config={{
               hours: {
                 label: "Hours",
-                color: "hsl(var(--chart-1))",
+                // color: "hsl(var(--chart-1))",
               },
             }}
             className="h-[160px]"
           >
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                // data={weeklyData}
+                data={formattedData}
                 margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
               >
                 <defs>
@@ -143,18 +157,23 @@ export function StudyGraph() {
                   className="text-muted-foreground"
                   tickFormatter={(value) => `${value}h`}
                 />
+
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Area
                   type="monotone"
                   dataKey="hours"
                   stroke="var(--color-hours)"
-                  strokeWidth={2}
+                  strokeWidth={3}
                   fill="url(#colorHours)"
                 />
+                <ComposedChart
+                  data={formattedData}
+                  margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
+                ></ComposedChart>
               </AreaChart>
             </ResponsiveContainer>
           </ChartContainer>
-        </div>
+        </div> */}
 
         {/* Bar Chart */}
         <div>
@@ -165,14 +184,14 @@ export function StudyGraph() {
             config={{
               hours: {
                 label: "Hours",
-                color: "hsl(var(--chart-1))",
+                // color: "hsl(var(--chart-1))",
               },
             }}
-            className="h-[100px]"
+            className="h-[200px]"
           >
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                // data={weeklyData}
+                data={formattedData}
                 margin={{ top: 5, right: 5, left: -20, bottom: 0 }}
               >
                 <XAxis
@@ -180,14 +199,16 @@ export function StudyGraph() {
                   tick={{ fontSize: 10 }}
                   tickLine={false}
                   axisLine={false}
-                  className="text-muted-foreground"
+                  className=" "
                 />
                 <YAxis hide />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar
                   dataKey="hours"
-                  fill="var(--color-hours)"
+                  // fill="var(--color-hours)"
+                  fill="#107dac"
                   radius={[4, 4, 0, 0]}
+                  barSize={60}
                 />
               </BarChart>
             </ResponsiveContainer>

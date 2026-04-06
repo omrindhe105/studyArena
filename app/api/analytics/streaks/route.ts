@@ -95,7 +95,6 @@ export async function GET() {
           return sessionDate >= day && sessionDate < nextDay;
         })
         .reduce((acc, s) => acc + s.durationMinutes, 0);
-      console.log(minutesStudied);
 
       return {
         date: day.toISOString().split("T")[0],
@@ -106,10 +105,13 @@ export async function GET() {
     });
 
     return NextResponse.json({
-      totalDurationMinutes,
-      averageStudy,
-      currentStreak,
-      longestStreak,
+      totalDurationMinutes: totalDurationMinutes ?? 0,
+      averageStudy: {
+        sevenDaysHours: averageStudy.sevenDaysHours ?? 0,
+        sevenDaysAvg: averageStudy.sevenDaysAvg ?? 0,
+      },
+      currentStreak: currentStreak ?? 0,
+      longestStreak: longestStreak ?? 0,
       last4Days: last4DaysData,
     });
   } catch (error) {
